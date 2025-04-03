@@ -181,6 +181,8 @@ const CodeBlockPage: React.FC = () => {
             color: theme === "light" ? "black" : "white", 
           }}
         >
+          <Typography variant="subtitle1">This is for changing the solution!</Typography>
+
           <CodeMirror
             title="Solution"
             value={solution}
