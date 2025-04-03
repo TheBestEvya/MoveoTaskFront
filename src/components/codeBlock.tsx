@@ -6,7 +6,8 @@ import { Box, Button, Typography, Paper } from "@mui/material";
 import Confetti from "react-confetti";
 import celebrationSound from '../assets/successSound.mp3';
 import { useNavigate, useParams } from "react-router-dom";
-
+import Chat from "./chat";
+import * as codeService from '../services/code-service';
 
 const socket = io("http://localhost:5000");
 
@@ -15,6 +16,7 @@ const socket = io("http://localhost:5000");
 const CodeBlockPage: React.FC = () => {
   const navigate = useNavigate();
   const id  = useParams().id
+  const [codeBlock , setCodeBlock] = useState<codeService.CodeBlock | null>(null);
   const [role, setRole] = useState<string>("");
   const [code, setCode] = useState<string>("");
   const [solution, setSolution] = useState<string>("console.log('Hello, World!');");
@@ -28,11 +30,21 @@ const CodeBlockPage: React.FC = () => {
   setSmileyVisible(false)
   setConfettiVisible(false)
   }
+  const fetchCodeBlockById = async (id:string) => {
+    try {
+      const { request } = codeService.getCodeBlockById(id);
+      const response = await request;
+      setCodeBlock(response.data);
+    } catch (error) {
+      console.error("Error fetching code blocks:", error);
+    }
+  };
   useEffect(() => {
+    fetchCodeBlockById(id!);
+
     socket.emit("joinRoom", { roomId: id });
 
     socket.on("role", (role: "student" | "mentor") => {
-      console.log(role)
       setRole(role);
     });
 
@@ -52,7 +64,20 @@ const CodeBlockPage: React.FC = () => {
       alert(msg);
       navigate("/"); 
     });
-  }, []);
+
+    socket.on("solutionUpdateForStudents", (updatedCode: string) => {
+      setSolution(updatedCode); // Update the code state
+    });
+
+    const handleBeforeUnload = () => {
+      handleDisconnect();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+
+    };
+  }, [id, navigate]);
 
   useEffect(() => {
     if (code === solution) {
@@ -70,6 +95,12 @@ const CodeBlockPage: React.FC = () => {
       setCode(value);
       socket.emit("codeUpdate", { roomId: id, code: value });
   };
+  const handleSolutionChange = (_editor: any, _data: any, value: string) => {  
+    setSolution(value);
+    // socket.emit("codeUpdate", { roomId: id, code: value });
+    socket.emit("solutionUpdateByMentor", { roomId: id, code: value });
+
+};
   const playCelebrationSound = () => {
     const audio = new Audio(celebrationSound); // Imported sound file
     audio.play();
@@ -82,7 +113,7 @@ const CodeBlockPage: React.FC = () => {
 
   return (
     <Box flex={1} sx={{ p: 3, maxWidth: 600, mx: "auto", textAlign: "center" }}>
-      <Typography variant="h4" gutterBottom>{`Code Block ${id}`}</Typography>
+      <Typography variant="h4" gutterBottom>{`Code Block ${codeBlock?.title}`}</Typography>
       <Typography variant="subtitle1">{`Role: ${role}`}</Typography>
       <Typography variant="subtitle2" sx={{ mb: 2 }}>{`Students in room: ${studentsCount}`}</Typography>
 
@@ -113,6 +144,26 @@ const CodeBlockPage: React.FC = () => {
       >
         Leave Room
       </Button>
+      {role === "mentor" ?(
+        <Paper elevation={3} sx={{ p: 2, border: "2px solid black", borderRadius: 2 }}>
+        <CodeMirror
+        title="Solution"
+        value={solution}
+        extensions={[javascript()]}
+        onChange={(value) => handleSolutionChange(null, null, value)}
+        theme={"dark"}
+        basicSetup={{ lineNumbers: true}}
+        style={{
+          minHeight: "300px", 
+          minWidth : "500px",
+          height: "auto", 
+          overflowY: "auto",
+        }}
+      />
+      </Paper>
+      ):
+      <Chat socket={socket} roomId= {id}></Chat>
+      }
     </Box>
   );
 };
