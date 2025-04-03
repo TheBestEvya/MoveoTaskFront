@@ -11,7 +11,6 @@ const RouterComponent: React.FC = () => {
         <Route path="/" element={<LobbyPage />} />
         
         {/* The code block page route */}
-        {/* TODO :: change param use to key or prop-id */}
         <Route path="/code-block/:id" element={<CodeBlock />} />
         </Routes>
     </Router>
