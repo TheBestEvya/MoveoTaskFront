@@ -37,6 +37,7 @@ const CodeBlockPage: React.FC = () => {
       const { request } = codeService.getCodeBlockById(id);
       const response = await request;
       setCodeBlock(response.data);
+      setSolution(response.data.solution);
     } catch (error) {
       console.error("Error fetching code blocks:", error);
     }
@@ -185,7 +186,7 @@ const CodeBlockPage: React.FC = () => {
 
           <CodeMirror
             title="Solution"
-            value={solution}
+            value={codeBlock?.solution}
             extensions={[javascript()]}
             onChange={(value) => handleSolutionChange(null, null, value)}
             theme={theme === "light" ? "light" : "dark"} 
