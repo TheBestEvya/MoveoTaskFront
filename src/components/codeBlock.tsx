@@ -10,7 +10,7 @@ import Chat from "./chat";
 import * as codeService from '../services/code-service';
 import { useTheme } from "../context/ThemeContex"; // Import useTheme hook
 
-const socket = io("http://localhost:5000");
+const socket = io(import.meta.env.VITE_SOCKET_API_URL);
 
 const CodeBlockPage: React.FC = () => {
   const navigate = useNavigate();
