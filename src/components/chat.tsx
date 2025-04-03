@@ -1,56 +1,51 @@
 import { useState, useEffect } from 'react';
 import { Box, TextField, Button, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme } from '../context/ThemeContex'; // Use your custom theme hook
 import notificationSound from '../assets/notificationSound.wav';
 
 interface ChatMessage {
     senderId: string | undefined;
     message: string;
-    timestamp: string; // or Date if you're working with a Date object
+    timestamp: string;
 }
 
-// Define the type for the socket prop
 interface ChatProps {
     roomId?: string;
-    socket: any; // You can refine the socket type if you need
+    socket: any; 
 }
 
-const Chat = ({ socket , roomId }: ChatProps) => {
-  const theme = useTheme();
+const Chat = ({ socket, roomId }: ChatProps) => {
+  const { theme } = useTheme(); // Get current theme
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState<ChatMessage>({ senderId: '', message: '', timestamp: '' });
-  const playnotificationSound = () => {
-    const audio = new Audio(notificationSound); 
+
+  const playNotificationSound = () => {
+    const audio = new Audio(notificationSound);
     audio.play();
   };
 
-    const currentUserId = socket.id; 
-  useEffect(() => {
+  const currentUserId = socket.id;
 
+  useEffect(() => {
     socket.on('newMessage', (message: ChatMessage) => {
       if (message.senderId !== currentUserId) {
         setMessages((prevMessages) => [...prevMessages, message]);
-        playnotificationSound();
+        playNotificationSound();
       }
     });
 
-    // Cleanup on component unmount
     return () => {
       socket.off('newMessage');
     };
-  }, [socket, currentUserId]); // Dependency array to listen for new messages only after connection
+  }, [socket, currentUserId]);
 
   const sendMessage = () => {
     if (newMessage.message.trim()) {
-      // Emit the message to the selected user
-      console.log('Sending message:', newMessage.message);
-      socket.emit('sendMessage', { roomId: roomId , senderId: currentUserId, message: newMessage.message , timestamp :newMessage.timestamp  });
+      socket.emit('sendMessage', { roomId, senderId: currentUserId, message: newMessage.message, timestamp: newMessage.timestamp });
       setMessages((prevMessages) => [...prevMessages, { ...newMessage }]);
       setNewMessage({ senderId: '', message: '', timestamp: '' });
     }
   };
-
-  
 
   return (
     <Box
@@ -63,8 +58,9 @@ const Chat = ({ socket , roomId }: ChatProps) => {
         right: 20,
         width: 300,
         height: '90%',
-        backgroundColor: theme.palette.background.paper,
-        border: `1px solid ${theme.palette.divider}`,
+        backgroundColor: theme === 'light' ? 'white' : '#121212',
+        color: theme === 'light' ? 'black' : 'white',
+        border: `1px solid ${theme === 'light' ? '#ccc' : '#444'}`,
         borderRadius: 2,
         boxShadow: 3,
         padding: 2,
@@ -74,26 +70,30 @@ const Chat = ({ socket , roomId }: ChatProps) => {
       <Box
         sx={{
           display: 'flex',
-          alignItems: 'center',
           flexDirection: 'column',
           justifyContent: 'space-between',
           marginBottom: 2,
           gap: 1,
           overflowY: 'auto',
-        //   height: 200,
         }}
       >
         {messages.map((msg, index) => (
-          <Box key={index} sx={{ padding: 1 }}>
+          <Box
+            key={index}
+            sx={{
+              padding: 1,
+              borderTop: `1px solid ${theme === 'light' ? '#ccc' : '#555'}`,
+              borderBottom: `1px solid ${theme === 'light' ? '#ccc' : '#555'}`,
+              width: '90%',
+            }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                {/* TODO :: add avatar functionality? - default user or a photo user selected */}
-              {/* <Avatar src={msg.senderId === currentUserId ? currentUser?.profileImage : selectedUser?.profileImage} /> */}
-                <Typography sx={{ marginLeft: 1, fontWeight: 'bold' }}>{msg.senderId === currentUserId ? 'You' : msg.senderId}</Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <Typography sx={{ marginLeft: 1, fontSize: '0.8rem' }}>
-                  {new Date(msg.timestamp).toLocaleString()}
-                </Typography>
-              </Box>
+              <Typography sx={{ fontWeight: 'bold' }}>
+                {msg.senderId === currentUserId ? 'You' : msg.senderId?.slice(0, 5)}
+              </Typography>
+              <Typography sx={{ fontSize: '0.8rem' }}>
+                {new Date(msg.timestamp).toLocaleString()}
+              </Typography>
             </Box>
             <Typography sx={{ marginTop: 1 }}>{msg.message}</Typography>
           </Box>
@@ -104,9 +104,9 @@ const Chat = ({ socket , roomId }: ChatProps) => {
         value={newMessage.message}
         onChange={(e) => setNewMessage({ senderId: currentUserId, message: e.target.value, timestamp: new Date().toISOString() })}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault(); // Prevents new line in the TextField
-            sendMessage(); // Call your send function
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
           }
         }}
         placeholder="Type a message"
@@ -114,12 +114,19 @@ const Chat = ({ socket , roomId }: ChatProps) => {
         variant="outlined"
         sx={{
           marginBottom: 1,
+          backgroundColor: theme === 'light' ? 'white' : '#1e1e1e',
+          color: theme === 'light' ? 'black' : 'white',
+          input: { color: theme === 'light' ? 'black' : 'white' },
         }}
       />
       <Button
         onClick={sendMessage}
         variant="contained"
         fullWidth
+        sx={{
+          backgroundColor: theme === 'light' ? 'primary.main' : 'grey.800',
+          '&:hover': { backgroundColor: theme === 'light' ? 'primary.dark' : 'grey.700' },
+        }}
       >
         Send
       </Button>
