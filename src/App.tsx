@@ -1,4 +1,6 @@
 import './App.css'
+import Layout from './components/layout';
+import { ThemeProvider } from "./context/ThemeContex";
 import RouterComponent from './routes/router'
 
 
@@ -7,7 +9,11 @@ function App() {
 
   return (
     <>
-    <RouterComponent />
+     <ThemeProvider>
+      <Layout>
+      <RouterComponent />
+      </Layout>
+      </ThemeProvider>
     </>
   )
 }

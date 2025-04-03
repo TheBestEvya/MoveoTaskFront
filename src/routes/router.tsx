@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import LobbyPage from "../pages/lobbyPage"; // Import the LobbyPage component
-import CodeBlock from "../components/codeBlock"; // Import the CodeBlockPage component
+import LobbyPage from "../pages/lobbyPage"; 
+import CodeBlock from "../components/codeBlock"; 
 
 const RouterComponent: React.FC = () => {
   return (
